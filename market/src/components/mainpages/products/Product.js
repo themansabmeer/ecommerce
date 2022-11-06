@@ -1,75 +1,87 @@
-<<<<<<< HEAD
-import React,{useContext, useEffect} from 'react'
+import React, { useContext, useState } from 'react'
 import { GlobalState } from '../../../GlobalState'
 import ProductItem from '../utils/productItem/productItem'
-import './Products.css'
 import Loading from '../utils/loading/Loading'
 import axios from 'axios'
-const Product = () => {
-  const state= useContext(GlobalState)
-  const [products,setProduct]= state.productsAPI.products
-  const [isAdmin]= state.userAPI.isAdmin
+import LoadMore from './LoadMore'
+import Filters from './Filter'
 
 
-  useEffect(()=>{
-    const getProducts= async ()=>{
-      const res= await axios.get('/api/products')
-      setProduct(res.data.products)
-    }
-    getProducts()
+
+function Products() {
+  const state = useContext(GlobalState)
+  const [products, setProducts] = state.productsAPI.products
+  const [isAdmin] = state.userAPI.isAdmin
+  const [token] = state.token
+  const [callback, setCallback] = state.productsAPI.callback
+  const [loading, setLoading] = useState(false)
+  const [isCheck, setIsCheck] = useState(false)
+
+  const handleCheck = (id) => {
+    products.forEach(product => {
+      if (product._id === id) product.checked = !product.checked
+    })
+    setProducts([...products])
+  }
+
+  const deleteProduct = async (id, public_id) => {
+    try {
+      setLoading(true)
+      
+      const deleteProduct = axios.delete(`/api/products/${id}`, {
+        headers: {  }
+      })
+
   
-  }, [setProduct])
+      await deleteProduct
+      setCallback(!callback)
+      setLoading(false)
+    } catch (err) {
+      alert(err.response.data.msg)
+    }
+  }
 
+  const checkAll = () => {
+    products.forEach(product => {
+      product.checked = !isCheck
+    })
+    setProducts([...products])
+    setIsCheck(!isCheck)
+  }
 
+  const deleteAll = () => {
+    products.forEach(product => {
+      if (product.checked) deleteProduct(product._id, product.images.public_id)
+    })
+  }
+
+  if (loading) return <div><Loading /></div>
   return (
     <>
-    <div className='products '>
-{
-  products.map(product=>{
-    return <ProductItem  key={product._id} product={product}
-    isAdmin={isAdmin}/>
-  })
-}
+     <Filters />
 
+      {
+        isAdmin &&
+        <div className="delete-all">
+          <span>Select all</span>
+          <input type="checkbox" checked={isCheck} onChange={checkAll} />
+          <button onClick={deleteAll}>Delete ALL</button>
+        </div>
+      }
 
-    </div>
-    {products.length===0 && <Loading/>}
+      <div className="products">
+        {
+          products.map(product => {
+            return <ProductItem key={product._id} product={product}
+              isAdmin={isAdmin} deleteProduct={deleteProduct} handleCheck={handleCheck} />
+          })
+        }
+      </div>
 
-    
+    <LoadMore/>
+      {products.length === 0 && <Loading />}
     </>
   )
 }
 
-=======
-import React,{useContext} from 'react'
-import { GlobalState } from '../../../GlobalState'
-import ProductItem from '../utils/productItem/productItem'
-import './Products.css'
-import Loading from '../utils/loading/Loading'
-const Product = () => {
-  const state= useContext(GlobalState)
-  const [products]= state.productsAPI.products
-  const [isAdmin]= state.userAPI.isAdmin
-
-
-  return (
-    <>
-    <div className='products'>
-{
-  products.map(product=>{
-    return <ProductItem key={product._id} product={product}
-    isAdmin={isAdmin}/>
-  })
-}
-
-
-    </div>
-    {products.length===0 && <Loading/>}
-
-    
-    </>
-  )
-}
-
->>>>>>> f8728ffce37ba7587379769914a5dfc40c1c629b
-export default Product
+export default Products
